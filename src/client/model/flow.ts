@@ -1,5 +1,5 @@
 /** One condensed flow over the chat snapshot (React-free). */
-import type { AssistantChatData, ChatNodeDataMap, ManualCompactionChatData, ToolChatData, TurnTailChatData } from '@deepseek-ai/dsh-client-ui-chat/client'
+import type { AssistantChatData, ChatNodeDataMap, ChatNodeKind, ManualCompactionChatData, ToolChatData, TurnTailChatData } from '@deepseek-ai/dsh-client-ui-chat/client'
 import type { AssistantBlock, ChatConversationViewNode, CommandNode, CompactionSummaryNode, ContextMessageNode, SteeringMessageNode, ToolCallBlock, TurnErrorNode, UserMessageNode } from '@deepseek-ai/dsh-client-ui-chat/client'
 import { toolGroup, type ToolRowModelCache } from './tools.ts'
 import { assistantText, producedForClosing, thoughtDurationMs } from './text.ts'
@@ -30,6 +30,31 @@ export interface FlowBuildCache {
    *  batch (an absorption changes the group's shape). */
   readonly groups: Map<string, { blocks: readonly ToolCallBlock[]; item: FocusFlowItem }>
 }
+
+/**
+ * Every chat-target node kind's disposition in this module, compile-checked
+ * against the merge-extensible {@link ChatNodeKind}: a new upstream kind (the
+ * map grows) fails the `Record` for its missing key, and a removed kind fails
+ * the excess-property check — a renamed event can no longer degrade silently
+ * into the `unknown` fallback row.
+ */
+export const CHAT_KIND_DISPOSITION = {
+  'assistant-step': 'assistant',
+  'command': 'command',
+  'compaction': 'compaction',
+  'context': 'message',
+  'manual-compaction': 'manual-compaction',
+  'model-retry': 'retry',
+  'steering': 'message',
+  'system-prompt': 'system-prompt',
+  'tool-call': 'grouped',
+  'turn-error': 'turn-error',
+  'turn-max-tokens': 'turn-max-tokens',
+  'turn-process': 'dropped',
+  'turn-tail': 'turn-tail',
+  'unknown': 'unknown',
+  'user': 'message',
+} satisfies Record<ChatNodeKind, string>
 
 /** One cache instance per mounted focus view (the build is React-free). */
 export function createFlowBuildCache(): FlowBuildCache {
@@ -168,6 +193,22 @@ function flowItemOf(
     case 'turn-error': {
       const error = data as TurnErrorNode
       return { kind: 'turn-error', nodeKey: key, message: error.message, code: error.code }
+    }
+    case 'system-prompt': {
+      // The request-header prompt (the chat SystemPromptRow): the complete
+      // model-visible text behind one collapsed disclosure.
+      const prompt = data as { text: string }
+      return { kind: 'system-prompt', nodeKey: key, text: prompt.text }
+    }
+    case 'turn-max-tokens': {
+      // The turn's output-token cap notice (the chat warning row); the
+      // notice's own fields carry nothing the row reads beyond its presence.
+      return { kind: 'turn-max-tokens', nodeKey: key }
+    }
+    case 'turn-process': {
+      // The chat's own process disclosure control row: the focus view folds
+      // with its own turn-fold model, so the control itself paints nothing.
+      return null
     }
     case 'turn-tail': {
       const tail = data as TurnTailChatData
@@ -415,7 +456,11 @@ export function buildFocusFlow(
     }
     if (turnId === undefined
       || (item.kind === 'message' && item.role !== 'context')
-      || item.kind === 'turn-tail') {
+      || item.kind === 'turn-tail'
+      // The chat keeps the system-prompt row independent of its process
+      // disclosure (always above the opening user); the focus view keeps it
+      // visible above the turn fold the same way.
+      || item.kind === 'system-prompt') {
       flushFold(null)
       flow.push(item)
       return
@@ -605,7 +650,14 @@ export function buildFocusFlow(
     }
     flush()
     const item = flowItemCached(cache, key, node, node.data as FocusNodeData)
-    if (item !== null) pushItem(item)
+    if (item !== null) {
+      pushItem(item)
+    } else {
+      // A dropped row (the chat's turn-process control) still separates
+      // order positions: land the pending context batch here so whatever
+      // follows cannot overtake it.
+      flushContext()
+    }
   }
   flush()
   flushFold(null)

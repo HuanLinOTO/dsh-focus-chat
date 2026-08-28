@@ -223,6 +223,18 @@ export type FocusFlowItem =
     failure: { message: string } | null
   }
   | { kind: 'turn-error'; nodeKey: string; message: string; code: string | undefined }
+  | {
+    /** Complete system prompt of one model request (the chat SystemPromptRow):
+     *  a collapsed disclosure whose body is the prompt text. */
+    kind: 'system-prompt'
+    nodeKey: string
+    text: string
+  }
+  | {
+    /** Turn ended at the per-request output-token cap (the chat notice row). */
+    kind: 'turn-max-tokens'
+    nodeKey: string
+  }
   | { kind: 'unknown'; nodeKey: string; nodeKind: string; data: unknown }
 
 /** The chat node data union the focus view narrows, keyed by the merge-extensible map. */

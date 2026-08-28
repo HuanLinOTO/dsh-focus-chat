@@ -11,7 +11,7 @@ import { ImageGallery, type ImageLoader } from '../chrome/MessageImage.tsx'
 import type { FocusFeedbackActions } from '../chrome/MessageFeedbackActions.tsx'
 import { ThinkRow } from './ThinkRow.tsx'
 import { ToolGroupRow } from './ToolGroupRow.tsx'
-import { ContextFoldRow, ContextRow } from './ContextRow.tsx'
+import { ContextFoldRow, ContextRow, SystemPromptRow } from './ContextRow.tsx'
 import { MessageRow } from './UserBubble.tsx'
 import { TurnTailRow } from './TurnTailRow.tsx'
 import { CommandRow } from './CommandRow.tsx'
@@ -159,6 +159,20 @@ export const FlowRow = memo(function FlowRow({ item, t, mdLabels, openFile, fork
             <span className={css.turnErrorMessage}>{item.message}</span>
           </div>
           {item.code !== undefined && <code className={css.turnErrorCode}>{item.code}</code>}
+        </div>
+      )
+    case 'system-prompt':
+      return <SystemPromptRow item={item} t={t} />
+    case 'turn-max-tokens':
+      // The chat's max-tokens notice chrome: the turn-error row shape with
+      // the warning dot and the resume hint instead of a failure.
+      return (
+        <div className={css.turnErrorRow} role="status">
+          <StateDot state="warning" className={css.turnErrorDot} />
+          <div className={css.turnErrorCopy}>
+            <span className={css.turnErrorTitle}>{t('turnMaxTokens')}</span>
+            <span className={css.turnErrorMessage}>{t('turnMaxTokens.hint')}</span>
+          </div>
         </div>
       )
     case 'unknown':

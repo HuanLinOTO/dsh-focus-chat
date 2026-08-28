@@ -534,4 +534,30 @@ export const ContextFoldRow = memo(function ContextFoldRow({ item, t, mdLabels }
   )
 })
 
+/** Complete system-prompt disclosure (the chat SystemPromptRow chrome: the
+ *  same collapsed row and opaque body — 141px code-block scrollport, the
+ *  model-facing text with its real line breaks). */
+export const SystemPromptRow = memo(function SystemPromptRow({ item, t }: {
+  item: Extract<FocusFlowItem, { kind: 'system-prompt' }>
+  t: FocusTranslate
+}) {
+  const [open, setOpen] = useState(false)
+  return (
+    <DisclosureRow
+      className={css.contextRow}
+      chevronClassName={css.contextChevron}
+      icon={<IconBrowseOutline16 size={14} />}
+      title={t('systemPrompt')}
+      open={open}
+      expandable
+      expandOnRowClick
+      onToggle={() => { setOpen(value => !value) }}
+    >
+      <div className={css.contextBody} data-system-prompt-body>
+        <OpaqueBody content={[{ type: 'text', text: item.text }]} source={null} t={t} />
+      </div>
+    </DisclosureRow>
+  )
+})
+
 /** User / steering bubble row (the chat UserStyleBubble chrome: image gallery, chips, clock, copy). */

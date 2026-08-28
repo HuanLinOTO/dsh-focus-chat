@@ -1008,7 +1008,7 @@ it('renders the empty hint for an empty conversation', () => {
       at('c1', 'context', {
         kind: 'context', seq: 5, time: 5000,
         content: [{ type: 'text', text: 'injected rules' }],
-        source: { kind: 'file' }, provenance: { role: 'instructions', label: 'AGENTS.md' }, form: null,
+        source: { kind: 'file' }, provenance: { role: 'inject', label: 'AGENTS.md' }, form: null,
       }),
       at('a2', 'assistant-step', {
         status: 'settled', turn: 1, step: 1, time: 8000,
@@ -1236,7 +1236,7 @@ it('renders the empty hint for an empty conversation', () => {
     const context = (key: string, label: string, text: string) => at(key, 'context', {
       kind: 'context', seq: 5, time: 1500,
       content: [{ type: 'text', text }],
-      source: { kind: 'file' }, provenance: { role: 'instructions', label }, form: null,
+      source: { kind: 'file' }, provenance: { role: 'inject', label }, form: null,
     })
     renderView([
       context('c1', 'AGENTS.md', 'rules text'),
@@ -1272,7 +1272,7 @@ it('renders the empty hint for an empty conversation', () => {
     const context = (key: string, label: string, text: string) => at(key, 'context', {
       kind: 'context', seq: 5, time: 1500,
       content: [{ type: 'text', text }],
-      source: { kind: 'file' }, provenance: { role: 'instructions', label }, form: null,
+      source: { kind: 'file' }, provenance: { role: 'inject', label }, form: null,
     })
     renderView([
       context('c1', 'AGENTS.md', 'rules text'),
@@ -1301,6 +1301,115 @@ it('renders the empty hint for an empty conversation', () => {
     expect(screen.getByText('AGENTS.md')).toBeTruthy()
     fireEvent.click(screen.getByText('AGENTS.md'))
     expect(screen.getByText('rules text')).toBeTruthy()
+  })
+
+  it('renders the request system prompt as a collapsed disclosure above the fold', () => {
+    const turn = {
+      turn: 1,
+      start: { time: 1000 },
+      end: { time: 8000 },
+      status: 'closed',
+      steps: [],
+      data: { get: () => undefined },
+    }
+    const at = (key: string, kind: string, data: unknown) => chatNode(key, kind, data, { kind: 'turn', turn } as never)
+    renderView([
+      at('p1', 'system-prompt', { text: 'You are a helpful software engineer assistant.' }),
+      at('u1', 'user', {
+        kind: 'user', seq: 1, time: 1,
+        content: [{ type: 'text', text: 'go' }], source: null,
+      }),
+      at('t1', 'tool-call', { root: settledCall('c1', 'bash', '{"command":"build"}') }),
+      at('a1', 'assistant-step', {
+        status: 'settled', turn: 1, step: 1, time: 8000,
+        blocks: [{ kind: 'text', text: 'all done' }],
+        finalNode: {
+          kind: 'assistant', seq: 20, time: 8000, turn: 1, step: 1, blocks: [],
+          timing: { stepStartTime: 6000, firstTokenTime: 7000, completedTime: 8000 },
+        },
+      }),
+    ])
+    // The prompt row stays visible beside the worked fold — the chat keeps
+    // the system prompt independent of its process disclosure — with its
+    // body collapsed.
+    expect(screen.getByText('系统提示词')).toBeTruthy()
+    expect(screen.queryByText('You are a helpful software engineer assistant.')).toBeNull()
+    expect(screen.getByText('工作了 7 秒')).toBeTruthy()
+    // The prompt renders above the opening user (the chat anchor rule).
+    const keys = [...document.querySelectorAll('[data-focus-anchor-key]')]
+      .map(el => el.getAttribute('data-focus-anchor-key'))
+    expect(keys.indexOf('p1')).toBeLessThan(keys.indexOf('u1'))
+    // Expanding reveals the complete prompt text.
+    fireEvent.click(screen.getByText('系统提示词'))
+    expect(screen.getByText('You are a helpful software engineer assistant.')).toBeTruthy()
+  })
+
+  it('drops the chat turn-process control row without disturbing the context batch', () => {
+    const turn = {
+      turn: 1,
+      start: { time: 1000 },
+      end: undefined,
+      status: 'open',
+      steps: [],
+      data: { get: () => undefined },
+    }
+    const at = (key: string, kind: string, data: unknown) => chatNode(key, kind, data, { kind: 'turn', turn } as never)
+    renderView([
+      at('u1', 'user', {
+        kind: 'user', seq: 1, time: 1,
+        content: [{ type: 'text', text: 'go' }], source: null,
+      }),
+      at('c1', 'context', {
+        kind: 'context', seq: 5, time: 1500,
+        content: [{ type: 'text', text: 'rules text' }],
+        source: { kind: 'file' }, provenance: { role: 'inject', label: 'AGENTS.md' }, form: null,
+      }),
+      at('p1', 'turn-process', {
+        turn: 1, controlAnchorSeq: 2, processStartSeq: 3, answerAnchorSeq: null,
+        answerStep: null, inlineReasoning: false, messageCount: 0, toolCallCount: 1, subagentCount: 0,
+      }),
+      at('t1', 'tool-call', { root: settledCall('c1x', 'bash', '{"command":"build"}') }),
+    ])
+    // The control row paints nothing — no unknown-surface fallback row.
+    expect(screen.queryByText(/未知 surface 事件/)).toBeNull()
+    expect(screen.queryByText('rules text')).toBeNull()
+    // The context batch still lands before the run and absorbs into its
+    // summary line (the dropped row is an order separator, not a gap).
+    expect(screen.getByText('载入了 1 项上下文，运行了 1 个命令')).toBeTruthy()
+    expect(screen.queryByText(/上下文注入/)).toBeNull()
+  })
+
+  it('renders the max-tokens notice beside the closing reply of a completed turn', () => {
+    const turn = {
+      turn: 1,
+      start: { time: 1000 },
+      end: { time: 8000 },
+      status: 'closed',
+      steps: [],
+      data: { get: () => undefined },
+    }
+    const at = (key: string, kind: string, data: unknown) => chatNode(key, kind, data, { kind: 'turn', turn } as never)
+    renderView([
+      at('u1', 'user', {
+        kind: 'user', seq: 1, time: 1,
+        content: [{ type: 'text', text: 'go' }], source: null,
+      }),
+      at('a1', 'assistant-step', {
+        status: 'settled', turn: 1, step: 1, time: 8000,
+        blocks: [{ kind: 'text', text: 'partial answer' }],
+        finalNode: {
+          kind: 'assistant', seq: 20, time: 8000, turn: 1, step: 1, blocks: [],
+          timing: { stepStartTime: 6000, firstTokenTime: 7000, completedTime: 8000 },
+        },
+      }),
+      at('m1', 'turn-max-tokens', { kind: 'turn-max-tokens', seq: 21, time: 8000, turn: 1, step: 1 }),
+    ])
+    // The warning notice stays visible after the closing reply — never
+    // folded into a worked line — with its resume hint.
+    expect(screen.getByText('已达到输出 token 上限')).toBeTruthy()
+    expect(screen.getByText(/回答被截断/)).toBeTruthy()
+    expect(screen.getByText('partial answer')).toBeTruthy()
+    expect(screen.queryByText(/未知 surface 事件/)).toBeNull()
   })
 
   it('classifies a tool-jobs notice injection into the background-jobs family', () => {
@@ -1708,7 +1817,7 @@ it('renders the empty hint for an empty conversation', () => {
       chatNode('t1', 'tool-call', { root: settledCall('c1', 'bash', '{}') }),
       chatNode('s1', 'steering', { kind: 'steering', seq: 2, time: 2, content: [{ type: 'text', text: 'hold on' }] }),
       chatNode('u2', 'user', { kind: 'user', seq: 3, time: 3, content: [{ type: 'text', text: 'second question' }], source: null }),
-      chatNode('c1', 'context', { kind: 'context', seq: 4, time: 4, content: [{ type: 'text', text: 'context text' }], source: { kind: 'file' }, provenance: { role: 'instructions', label: 'AGENTS.md' }, form: null }),
+      chatNode('c1', 'context', { kind: 'context', seq: 4, time: 4, content: [{ type: 'text', text: 'context text' }], source: { kind: 'file' }, provenance: { role: 'inject', label: 'AGENTS.md' }, form: null }),
       assistantNode('a1', 'settled', 'thinking', 3000),
     ])
     const nav = screen.getByRole('navigation')
