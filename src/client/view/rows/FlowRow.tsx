@@ -1,8 +1,8 @@
 import { Fragment, memo } from 'react'
 import { JsonBlock, MarkdownText, StateDot } from '@deepseek-ai/dsh-client-ui-primitives'
-import type { MarkdownCodeLabels, MarkdownFileMentions } from '@deepseek-ai/dsh-client-ui-primitives'
+import type { MarkdownLabels, MarkdownFileMentions } from '@deepseek-ai/dsh-client-ui-primitives'
 import type { FocusTranslate } from '../../contract/props.ts'
-import type { ConversationTimelineSnapshot } from '@deepseek-ai/dsh-client-runtime/client'
+import type { ConversationTimelineSnapshot } from '@deepseek-ai/dsh-client-ui-conversation/client'
 import type { FocusFlowItem } from '../../model/types.ts'
 import { formatSeconds } from '../../model/text.ts'
 import { jsonTruncated } from '../helpers/terminal.ts'
@@ -11,7 +11,7 @@ import { ImageGallery, type ImageLoader } from '../chrome/MessageImage.tsx'
 import type { FocusFeedbackActions } from '../chrome/MessageFeedbackActions.tsx'
 import { ThinkRow } from './ThinkRow.tsx'
 import { ToolGroupRow } from './ToolGroupRow.tsx'
-import { ContextFoldRow, ContextRow } from './ContextRow.tsx'
+import { ContextFoldRow, ContextRow, SystemPromptRow } from './ContextRow.tsx'
 import { MessageRow } from './UserBubble.tsx'
 import { TurnTailRow } from './TurnTailRow.tsx'
 import { CommandRow } from './CommandRow.tsx'
@@ -20,10 +20,10 @@ import { RetryRow } from './RetryRow.tsx'
 import { TurnFoldRow } from './TurnFoldRow.tsx'
 import css from './FlowRow.module.css'
 
-export const FlowRow = memo(function FlowRow({ item, t, codeLabels, openFile, forkAt, mentionsByKey, loadImage, feedback, isLoopback }: {
+export const FlowRow = memo(function FlowRow({ item, t, mdLabels, openFile, forkAt, mentionsByKey, loadImage, feedback, isLoopback }: {
   item: FocusFlowItem
   t: FocusTranslate
-  codeLabels: MarkdownCodeLabels
+  mdLabels: MarkdownLabels
   openFile: (path: string) => void
   forkAt: (seq: number) => void
   /** Inline file-mention vocabulary per assistant node key (closing prose). */
@@ -36,10 +36,10 @@ export const FlowRow = memo(function FlowRow({ item, t, codeLabels, openFile, fo
   switch (item.kind) {
     case 'message':
       return item.role === 'context'
-        ? <ContextRow item={item} t={t} codeLabels={codeLabels} />
-        : <MessageRow item={item} t={t} codeLabels={codeLabels} loadImage={loadImage} />
+        ? <ContextRow item={item} t={t} mdLabels={mdLabels} />
+        : <MessageRow item={item} t={t} mdLabels={mdLabels} loadImage={loadImage} />
     case 'context-fold':
-      return <ContextFoldRow item={item} t={t} codeLabels={codeLabels} />
+      return <ContextFoldRow item={item} t={t} mdLabels={mdLabels} />
     case 'assistant': {
       // The chat assistant's shell rule: a node that is only tool-call heads
       // (or empty) paints nothing, so the flow shows no dead gap.
@@ -59,7 +59,7 @@ export const FlowRow = memo(function FlowRow({ item, t, codeLabels, openFile, fo
                     key={index}
                     text={block.text}
                     streaming={item.running}
-                    codeLabels={codeLabels}
+                    labels={mdLabels}
                     fileMentions={mentionsByKey.get(item.nodeKey)}
                   />
                 )
@@ -116,13 +116,13 @@ export const FlowRow = memo(function FlowRow({ item, t, codeLabels, openFile, fo
       )
     }
     case 'tools':
-      return <ToolGroupRow group={item.group} t={t} codeLabels={codeLabels} openFile={openFile} />
+      return <ToolGroupRow group={item.group} t={t} mdLabels={mdLabels} openFile={openFile} />
     case 'turn-fold':
       return (
         <TurnFoldRow
           item={item}
           t={t}
-          codeLabels={codeLabels}
+          mdLabels={mdLabels}
           openFile={openFile}
           forkAt={forkAt}
           mentionsByKey={mentionsByKey}
@@ -145,9 +145,9 @@ export const FlowRow = memo(function FlowRow({ item, t, codeLabels, openFile, fo
     case 'command':
       return <CommandRow item={item} t={t} />
     case 'manual-compaction':
-      return <ManualCompactionRow item={item} t={t} codeLabels={codeLabels} />
+      return <ManualCompactionRow item={item} t={t} mdLabels={mdLabels} />
     case 'compaction':
-      return <CompactionRow item={item} t={t} codeLabels={codeLabels} />
+      return <CompactionRow item={item} t={t} mdLabels={mdLabels} />
     case 'retry':
       return <RetryRow item={item} t={t} />
     case 'turn-error':
@@ -159,6 +159,20 @@ export const FlowRow = memo(function FlowRow({ item, t, codeLabels, openFile, fo
             <span className={css.turnErrorMessage}>{item.message}</span>
           </div>
           {item.code !== undefined && <code className={css.turnErrorCode}>{item.code}</code>}
+        </div>
+      )
+    case 'system-prompt':
+      return <SystemPromptRow item={item} t={t} />
+    case 'turn-max-tokens':
+      // The chat's max-tokens notice chrome: the turn-error row shape with
+      // the warning dot and the resume hint instead of a failure.
+      return (
+        <div className={css.turnErrorRow} role="status">
+          <StateDot state="warning" className={css.turnErrorDot} />
+          <div className={css.turnErrorCopy}>
+            <span className={css.turnErrorTitle}>{t('turnMaxTokens')}</span>
+            <span className={css.turnErrorMessage}>{t('turnMaxTokens.hint')}</span>
+          </div>
         </div>
       )
     case 'unknown':
