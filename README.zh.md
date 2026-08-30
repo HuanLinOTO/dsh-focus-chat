@@ -1,6 +1,6 @@
 # dsh-focus-chat
 
-[![npm version](https://img.shields.io/npm/v/@dingyi222666/dsh-focus-chat.svg)](https://www.npmjs.com/package/@dingyi222666/dsh-focus-chat)
+[![npm version](https://img.shields.io/npm/v/@huanlin/dsh-focus-chat.svg)](https://www.npmjs.com/package/@huanlin/dsh-focus-chat)
 
 [English](README.md) | 中文
 
@@ -24,7 +24,7 @@
 
 ```sh
 # 从 npm 安装（需要 dsh >= 0.1.0-rc.6）
-dsh plugin --profile web add @dingyi222666/dsh-focus-chat
+dsh plugin --profile web add @huanlin/dsh-focus-chat
 # 重启 dsh web，标签页自动挂载
 dsh web
 ```

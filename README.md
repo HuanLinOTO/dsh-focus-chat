@@ -1,6 +1,6 @@
 # dsh-focus-chat
 
-[![npm version](https://img.shields.io/npm/v/@dingyi222666/dsh-focus-chat.svg)](https://www.npmjs.com/package/@dingyi222666/dsh-focus-chat)
+[![npm version](https://img.shields.io/npm/v/@huanlin/dsh-focus-chat.svg)](https://www.npmjs.com/package/@huanlin/dsh-focus-chat)
 
 English | [中文](README.zh.md)
 
@@ -24,7 +24,7 @@ Switch to it whenever you want the "what happened?" view, and flip back for the 
 
 ```sh
 # Install from npm (requires dsh >= 0.1.2-alpha.1)
-dsh plugin --profile web add @dingyi222666/dsh-focus-chat
+dsh plugin --profile web add @huanlin/dsh-focus-chat
 # Restart dsh web; the tab mounts automatically
 dsh web
 ```

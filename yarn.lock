@@ -380,9 +380,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@dingyi222666/dsh-focus-chat@workspace:.":
+"@huanlin/dsh-focus-chat@workspace:.":
   version: 0.0.0-use.local
-  resolution: "@dingyi222666/dsh-focus-chat@workspace:."
+  resolution: "@huanlin/dsh-focus-chat@workspace:."
   dependencies:
     "@deepseek-ai/cordis": "npm:^4.0.1"
     "@deepseek-ai/dsh-api-remotes": "npm:0.1.1-rc.2"
