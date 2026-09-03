@@ -4,7 +4,7 @@
  * self-contained so this package builds outside the dsh workspace.
  *
  * Emits two artifacts:
- *  - lib/index.js + lib/invariant.js: the Node half (ESM) the host Loader
+ *  - lib/index.js: the Node half (ESM) the host Loader
  *    mounts (both are dependency-free: every import is type-only).
  *  - lib/client.js: the browser half (CJS closure bundle) served by the
  *    modules node half into window.__ModuleLoader__ — a lazy module-table entry
@@ -43,7 +43,7 @@ const CSS_VIRTUAL_SUFFIX = '.mjs'
 export default [
   {
     name: `${PLUGIN_ID}/node`,
-    entry: ['src/index.ts', 'src/invariant.ts'],
+    entry: ['src/index.ts'],
     outDir: 'lib',
     format: ['esm'],
     platform: 'node',
