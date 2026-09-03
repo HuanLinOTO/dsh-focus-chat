@@ -206,30 +206,35 @@ it('renders the empty hint for an empty conversation', () => {
     expect(screen.getByText('思考')).toBeTruthy()
   })
 
-  it('keeps the Think row to one line, tail-previewing the streaming text, and settles to the first line', () => {
+  it('previews a four-line streaming tail while running and settles to the first line', () => {
     const { source } = renderView([
-      assistantNode('a1', 'running', 'first line\nsecond line', 100),
+      assistantNode('a1', 'running', 'l1\nl2\nl3\nl4\nl5', 100),
     ])
-    // Default one line (chat semantics): only the streaming tail previews.
-    expect(screen.queryByText('first line')).toBeNull()
-    expect(screen.getByText('second line')).toBeTruthy()
-    // Expanding reveals the full reasoning body.
-    fireEvent.click(screen.getByText('second line'))
-    expect(screen.getByText(/first line/)).toBeTruthy()
-    expect(screen.getByText(/second line/)).toBeTruthy()
+    // The running preview caps at four lines: the first line sits beyond
+    // the window while the trailing four stream in the animated seat.
+    expect(screen.queryByText(/l1\b/)).toBeNull()
+    expect(screen.getByText(/l2 l3 l4 l5/).closest('[data-on]')).toBeTruthy()
+    // The one-line header summary yields while the tail previews.
+    expect(document.querySelector('[class*="thinkSummary"]')).toBeNull()
+    // Expanding reveals the full reasoning body and retreats the preview.
+    fireEvent.click(screen.getByText('思考'))
+    expect(screen.getByText(/l1 l2 l3 l4 l5/)).toBeTruthy()
+    expect(document.querySelector('[data-on]')).toBeNull()
     // Completion flips the one-line summary back to the first line (the
     // manual expansion stays open). Settling is a structural transition
     // (streaming activity ends), so it renders immediately.
     act(() => {
       source.set(chatOf([
-        assistantNode('a1', 'settled', 'first line\nsecond line', 3000),
+        assistantNode('a1', 'settled', 'l1\nl2\nl3\nl4\nl5', 3000),
       ]))
     })
     expect(screen.getByText('思考')).toBeTruthy()
-    expect(screen.getByText(/first line/)).toBeTruthy()
+    // Still expanded: the body keeps the full reasoning text.
+    expect(screen.getByText(/l1 l2 l3 l4 l5/)).toBeTruthy()
     fireEvent.click(screen.getByText('思考'))
-    expect(screen.queryByText(/second line/)).toBeNull()
-    expect(screen.getByText('first line')).toBeTruthy()
+    // Collapsed again: the settled first line, no preview seat.
+    expect(screen.getByText('l1')).toBeTruthy()
+    expect(document.querySelector('[data-on]')).toBeNull()
   })
 
   it('renders a settled reasoning block above its reply text', () => {
@@ -259,8 +264,9 @@ it('renders the empty hint for an empty conversation', () => {
         blocks: [{ kind: 'reasoning', text: 'thinking\nmore' }],
       }),
     ])
-    // Pure thinking phase: the tail previews on the one-line row.
-    expect(screen.getByText('more')).toBeTruthy()
+    // Pure thinking phase: the tail previews in the four-line seat.
+    expect(screen.getByText(/thinking more/)).toBeTruthy()
+    expect(document.querySelector('[data-on]')).toBeTruthy()
     act(() => {
       source.set(chatOf([
         chatNode('a1', 'assistant-step', {
@@ -273,9 +279,10 @@ it('renders the empty hint for an empty conversation', () => {
       ]))
     })
     // The reply started: the reasoning is no longer the streaming tail and
-    // the summary flips to the first line.
+    // the preview retreats to the one-line first-line summary.
     expect(screen.getByText('thinking')).toBeTruthy()
-    expect(screen.queryByText('more')).toBeNull()
+    expect(screen.queryByText(/thinking more/)).toBeNull()
+    expect(document.querySelector('[data-on]')).toBeNull()
   })
 
   it('refreshes the Think summary on assistant-only publications with a stable order reference', () => {
@@ -318,7 +325,7 @@ it('renders the empty hint for an empty conversation', () => {
       useHostHome: () => undefined,
       t,
     } as unknown as FocusViewProps)} />)
-    expect(screen.getByText('two')).toBeTruthy()
+    expect(screen.getByText(/one two/)).toBeTruthy()
     act(() => {
       // Same `order` array reference; the node store returns the settled node.
       nodesByKey.set('a1', settledNode)
@@ -356,7 +363,7 @@ it('renders the empty hint for an empty conversation', () => {
         ],
       }),
     ])
-    expect(screen.getByText('more two')).toBeTruthy()
+    expect(screen.getByText(/second think more two/)).toBeTruthy()
     expect(screen.queryByText('more one')).toBeNull()
   })
 
@@ -365,7 +372,7 @@ it('renders the empty hint for an empty conversation', () => {
     const row = screen.getByText('思考')
     const wrap = row.closest('[data-state]')
     expect(wrap?.getAttribute('data-state')).toBe('running')
-    expect(wrap?.querySelector('.thinkRowInner, [data-disclosure-row]')).toBeTruthy()
+    expect(wrap?.querySelector('[data-disclosure-row]')).toBeTruthy()
   })
 
   it('keeps the leading Think row standalone above the folded run', () => {

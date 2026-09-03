@@ -1,4 +1,5 @@
 .thinkWrap {
+  position: relative;
   display: flex;
   flex-direction: column;
 }
@@ -8,12 +9,9 @@
   flex-direction: column;
 }
 
-.thinkRowInner {
-  position: relative;
-  overflow: hidden;
-}
-
-.thinkWrap[data-state='running'] .thinkRowInner::after {
+/* The running wash sweeps the whole segment — the header plus whatever
+   streams below it (the four-line preview, or the open body). */
+.thinkWrap[data-state='running']::after {
   content: '';
   position: absolute;
   inset-block: 0;
@@ -34,9 +32,50 @@
   90%, 100% { left: 100%; }
 }
 
+/* The collapsed running preview: a four-line streaming tail under the
+   header. The grid track animates 0fr -> 1fr so the reveal (thinking
+   starts, or the row collapses while still streaming) and the retreat
+   (reply starts, or the row expands) ride one easing; the text box caps
+   at four lines and end-follows the stream by scrollTop (the reasoning
+   row's tail follow, vertical). */
+.thinkPreview {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transition:
+    grid-template-rows 240ms cubic-bezier(0.2, 0, 0, 1),
+    opacity 240ms ease;
+}
+
+.thinkPreview[data-on] {
+  grid-template-rows: 1fr;
+  opacity: 1;
+}
+
+.thinkPreviewClip {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.thinkPreviewText {
+  display: block;
+  max-height: calc(4 * (20px + var(--dsh-content-font-delta-secondary, 0px)));
+  overflow: hidden;
+  padding: 2px 0 4px 22px;
+  color: var(--dsw-alias-label-tertiary);
+  font-size: var(--dsh-content-font-size-secondary, 13px);
+  line-height: calc(20px + var(--dsh-content-font-delta-secondary, 0px));
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .thinkWrap[data-state='running'] .thinkRowInner::after {
+  .thinkWrap[data-state='running']::after {
     animation: none;
+  }
+
+  .thinkPreview {
+    transition: none;
   }
 }
 
@@ -61,13 +100,6 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-
-/* While streaming the tail is end-followed by scroll, so the ellipsis would
-   mask the newest text — clip instead (the chat reasoning row's rhythm). */
-.thinkSummary[data-follow-end] {
-  text-overflow: clip;
-}
-
 
 .thinkBody {
   padding: 4px 0 4px 22px;

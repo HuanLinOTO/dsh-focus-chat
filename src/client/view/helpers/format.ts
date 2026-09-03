@@ -7,11 +7,17 @@ export function firstLine(text: string): string {
   return newline === -1 ? text : text.slice(0, newline)
 }
 
-/** Latest non-empty line of a streaming text (the running tail preview). */
-export function latestLine(text: string): string {
+/** The trailing `count` lines of a streaming text (the running tail preview). */
+export function latestLines(text: string, count: number): string {
   const visible = text.trimEnd()
-  const newline = visible.lastIndexOf('\n')
-  return newline === -1 ? visible : visible.slice(newline + 1)
+  let at = visible.length
+  for (let taken = 0; taken < count; taken += 1) {
+    if (at === 0) return visible
+    const newline = visible.lastIndexOf('\n', at - 1)
+    if (newline === -1) return visible
+    at = newline
+  }
+  return visible.slice(at + 1)
 }
 
 /** Zero-padded two-digit number (the chat clock's rhythm). */

@@ -1,14 +1,19 @@
 import { memo, useEffect, useRef, useState } from 'react'
 import { DisclosureRow, IconThinkOutline14 } from '@deepseek-ai/dsh-client-ui-primitives'
 import type { FocusTranslate } from '../../contract/props.ts'
-import { firstLine, latestLine, useThrottledVisualUpdate } from '../helpers/format.ts'
+import { firstLine, latestLines, useThrottledVisualUpdate } from '../helpers/format.ts'
 import a11yCss from '../accessibility.module.css'
 import css from './ThinkRow.module.css'
 
+/** Trailing lines the collapsed running preview shows. */
+const PREVIEW_LINES = 4
+
 /**
- * One Think disclosure, mirroring the chat reasoning row: one line by
- * default, previewing the streaming tail while running (end-following
- * scroll), the first line once settled; the body expands on click.
+ * One Think disclosure, mirroring the chat reasoning row: the first line
+ * once settled; while the reasoning is the streaming tail the collapsed row
+ * grows a four-line end-following preview under the header — the height
+ * animates open and shut, and the running sweep washes the whole segment;
+ * the body expands on click.
  */
 export const ThinkRow = memo(function ThinkRow({ text, running, title, t }: {
   text: string
@@ -19,38 +24,42 @@ export const ThinkRow = memo(function ThinkRow({ text, running, title, t }: {
   t: FocusTranslate
 }) {
   const [expanded, setExpanded] = useState(false)
-  const summaryRef = useRef<HTMLSpanElement>(null)
-  const summary = running ? latestLine(text) : firstLine(text)
-  const scheduleSummaryScroll = useThrottledVisualUpdate(() => {
-    const element = summaryRef.current
+  const previewRef = useRef<HTMLSpanElement>(null)
+  const previewing = running && !expanded
+  const tail = running ? latestLines(text, PREVIEW_LINES) : ''
+  const schedulePreviewScroll = useThrottledVisualUpdate(() => {
+    const element = previewRef.current
     if (element === null) return
-    element.scrollLeft = running ? element.scrollWidth - element.clientWidth : 0
+    element.scrollTop = previewing ? element.scrollHeight - element.clientHeight : 0
   })
   useEffect(() => {
-    scheduleSummaryScroll()
-  }, [running, scheduleSummaryScroll, summary])
+    schedulePreviewScroll()
+  }, [previewing, schedulePreviewScroll, tail])
   return (
     <div className={css.thinkWrap} data-state={running ? 'running' : 'ok'}>
       {running && <span className={a11yCss.visuallyHidden}>{t('row.running')}</span>}
       <DisclosureRow
         className={css.thinkRow}
-        rowClassName={css.thinkRowInner}
         icon={<IconThinkOutline14 size={14} />}
         title={title}
         open={expanded}
         expandable
         expandOnRowClick
         onToggle={() => { setExpanded(value => !value) }}
-        collapsedContent={(
+        collapsedContent={running ? null : (
           <>
             <span className={css.thinkSeparator} aria-hidden />
-            <span ref={summaryRef} className={css.thinkSummary} data-follow-end={running || undefined}>{summary}</span>
+            <span className={css.thinkSummary}>{firstLine(text)}</span>
           </>
         )}
       >
         <div className={css.thinkBody}>{text}</div>
       </DisclosureRow>
+      <div className={css.thinkPreview} data-on={previewing || undefined} aria-hidden={previewing ? undefined : 'true'}>
+        <div className={css.thinkPreviewClip}>
+          <span ref={previewRef} className={css.thinkPreviewText}>{tail}</span>
+        </div>
+      </div>
     </div>
   )
 })
-
