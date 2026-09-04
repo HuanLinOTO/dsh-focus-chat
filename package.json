@@ -42,7 +42,7 @@
     "platform": "web"
   },
   "scripts": {
-    "prepare": "yarn run build",
+    "prepare": "npm run build",
     "build": "tsc -p tsconfig.build.json && tsdown",
     "bundle": "tsdown",
     "watch": "tsdown --watch",
