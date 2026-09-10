@@ -1,6 +1,7 @@
 import { memo, useState } from 'react'
 import { DisclosureRow, IconDataOutline16 } from '@deepseek-ai/dsh-client-ui-primitives'
-import type { TurnTokenUsage } from '@deepseek-ai/dsh-client-ui-chat/src/client/contract/chat-nodes.ts'
+import type { TurnTailChatData } from '@deepseek-ai/dsh-client-ui-chat/client'
+type TurnTokenUsage = NonNullable<TurnTailChatData['tokenUsage']>
 import type { FocusTranslate } from '../../contract/props.ts'
 import css from './TurnUsageDisclosure.module.css'
 

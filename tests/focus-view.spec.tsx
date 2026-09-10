@@ -51,6 +51,19 @@ function runningCall(callId: string, name: string, argsRaw = '{}'): RunningToolC
   return { callId, name, argsRaw, turn: 1, step: 1, time: 1000, subCalls: [] }
 }
 
+/** Empty Chat node source stub (the view never binds keyed sources directly). */
+const EMPTY_NODE_SOURCE = { getSnapshot: () => undefined, subscribe: () => () => {} }
+
+/** The full ChatNodeStore face over a fixture map (keyed sources stay unexercised). */
+function nodeStoreOf(nodesByKey: Map<string, ReturnType<typeof chatNode>>) {
+  return {
+    get: (key: string) => nodesByKey.get(key),
+    values: () => [...nodesByKey.values()],
+    source: () => EMPTY_NODE_SOURCE,
+    processSource: () => EMPTY_NODE_SOURCE,
+  }
+}
+
 function sessionsStore(cwd: string | undefined) {
   return createSnapshotStore<SessionListState>({
     ids: [SID],
@@ -82,10 +95,7 @@ function chatOf(nodes: ReturnType<typeof chatNode>[], opts: { running?: boolean;
     },
     chat: {
       order: nodes.map(n => n.key),
-      nodes: {
-        get: (key: string) => nodesByKey.get(key),
-        values: () => nodes,
-      },
+      nodes: nodeStoreOf(nodesByKey),
       locations: { getTurn: () => [], getStep: () => [] },
       navigation: { items: () => opts.navigation ?? [] },
       timeline: { turnOrder: [], turns: new Map() },
@@ -303,7 +313,7 @@ it('renders the empty hint for an empty conversation', () => {
       },
       chat: {
         order,
-        nodes: { get: (k: string) => nodesByKey.get(k), values: () => [runningNode] },
+        nodes: nodeStoreOf(nodesByKey),
         locations: { getTurn: () => [], getStep: () => [] },
       navigation: { items: () => [] },
         timeline: { turnOrder: [], turns: new Map() },
@@ -340,7 +350,7 @@ it('renders the empty hint for an empty conversation', () => {
         },
         chat: {
           order,
-          nodes: { get: (k: string) => nodesByKey.get(k), values: () => [settledNode] },
+          nodes: nodeStoreOf(nodesByKey),
           locations: { getTurn: () => [], getStep: () => [] },
       navigation: { items: () => [] },
           timeline: { turnOrder: [], turns: new Map() },
@@ -926,9 +936,10 @@ it('renders the empty hint for an empty conversation', () => {
         content: [{ type: 'text', text: 'hello /compact world @sub1' }], source: null,
       }),
     ])
-    expect(screen.getByText('hello')).toBeTruthy()
-    expect(screen.getByText('/compact')).toBeTruthy()
-    expect(screen.getByText('@sub1')).toBeTruthy()
+    // The shared user-text projection: unnamed /tokens stay plain, a bare
+    // @mention decorates as a reference chip (the chat bubble's projection).
+    expect(screen.getByText('hello /compact world')).toBeTruthy()
+    expect(document.querySelector('[data-ref-chip="file"]')?.textContent).toContain('sub1')
     expect(screen.getByRole('button', { name: '复制' })).toBeTruthy()
   })
 

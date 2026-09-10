@@ -1,12 +1,12 @@
 import { memo, useMemo } from 'react'
-import { JsonBlock } from '@deepseek-ai/dsh-client-ui-primitives'
+import { JsonBlock, projectUserText } from '@deepseek-ai/dsh-client-ui-primitives'
 import type { MarkdownLabels } from '@deepseek-ai/dsh-client-ui-primitives'
 import type { ContentBlock } from '@deepseek-ai/dsh-llm/types'
 import type { FocusTranslate } from '../../contract/props.ts'
 import type { FocusFlowItem } from '../../model/types.ts'
 import { jsonTruncated } from '../helpers/terminal.ts'
 import { messageImageLabels, userImages } from '../helpers/image-labels.ts'
-import { messageText, projectUserText } from '../helpers/message.tsx'
+import { messageText } from '../helpers/message.tsx'
 import { ImageGallery, type ImageLoader } from '../chrome/MessageImage.tsx'
 import { MessageActions } from '../chrome/MessageActions.tsx'
 import css from './UserBubble.module.css'
@@ -30,7 +30,7 @@ export const MessageRow = memo(function MessageRow({ item, t, mdLabels, loadImag
         )}
         {showBubble && (
           <div className={css.bubble}>
-            {projectUserText(text)}
+            {projectUserText(text, item.referenceLabels ?? [], item.skillNames ?? [])}
             {others.map((block, index) => (
               <JsonBlock
                 key={index}
@@ -73,7 +73,7 @@ export const PendingSteeringBubble = memo(function PendingSteeringBubble({ conte
         )}
         {showBubble && (
           <div className={css.bubble}>
-            {projectUserText(text)}
+            {projectUserText(text, [])}
             {others.map((block, index) => (
               <JsonBlock
                 key={index}

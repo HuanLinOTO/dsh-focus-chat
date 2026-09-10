@@ -98,13 +98,20 @@ function flowItemOf(
     case 'user':
     case 'steering':
     case 'context': {
-      const message = data as UserMessageNode | SteeringMessageNode | ContextMessageNode
+      // The chat message nodes carry the reference/skill chip sources the
+      // shared user-text projection decorates (ui-chat's message.ts merge).
+      const message = data as (UserMessageNode | SteeringMessageNode | ContextMessageNode) & {
+        referenceLabels?: readonly string[]
+        skillNames?: readonly string[]
+      }
       const base = {
         kind: 'message' as const,
         nodeKey: key,
         role: node.kind,
         content: message.content,
         time: message.time,
+        referenceLabels: message.referenceLabels,
+        skillNames: message.skillNames,
       }
       if (node.kind !== 'context') return base
       const context = message as ContextMessageNode

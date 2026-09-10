@@ -4,11 +4,11 @@ import type { ContentBlock } from '@deepseek-ai/dsh-llm/types'
 // Type-only: pulls ui-deliverables' ConversationTurnDataMap augmentation
 // (the 'deliverables' turn data the turn-tail row reads).
 import type {} from '@deepseek-ai/dsh-client-ui-deliverables/client'
-import type { AssistantBlock, ChatNodeDataMap, ContextMessageNode, SteeringMessageNode, UserMessageNode } from '@deepseek-ai/dsh-client-ui-chat/client'
-// Type-only from the source module: TurnTokenUsage is declared in the chat
-// contract but not re-exported from the client entry; the src/* export seam
-// serves it for compile-time use (erased from the bundle).
-import type { TurnTokenUsage } from '@deepseek-ai/dsh-client-ui-chat/src/client/contract/chat-nodes.ts'
+import type { AssistantBlock, ChatNodeDataMap, ContextMessageNode, SteeringMessageNode, TurnTailChatData, UserMessageNode } from '@deepseek-ai/dsh-client-ui-chat/client'
+// TurnTokenUsage is declared in the chat contract but not re-exported from
+// the client entry; derive it from the public TurnTailChatData field
+// (compile-time only).
+type TurnTokenUsage = NonNullable<TurnTailChatData['tokenUsage']>
 
 /** Locale-owned label surfaces the render sites add to the shared card primitives. */
 type DistributiveOmit<T, K extends keyof T> = T extends unknown ? Omit<T, K> : never
@@ -150,6 +150,10 @@ export type FocusFlowItem =
     role: 'user' | 'steering' | 'context'
     content: readonly ContentBlock[]
     time: number
+    /** Session labels cited by an adjacent recall (the chat bubble's chip sources). */
+    referenceLabels?: readonly string[]
+    /** Skill names the step's skill-invocation injections loaded for this message. */
+    skillNames?: readonly string[]
     /** Context-injection chrome (the chat ContextInjectionRow); absent for user/steering. */
     context?: { source: ContextMessageNode['source']; provenance: ContextMessageNode['provenance']; form: ContextMessageNode['form'] }
   }

@@ -114,9 +114,9 @@ export function apply(ctx: Context): void {
         // chatFileMentions service (ui-deliverables) is absent when composed out.
         fileMentions: (owner) => {
           const service = ctx.get('chatFileMentions') as
-            | { forClosing: (owner: FocusTurnTailOwner) => MarkdownFileMentions | undefined }
+            | { forClosing: (owner: FocusTurnTailOwner, sessionId: SessionId) => MarkdownFileMentions | undefined }
             | undefined
-          return service?.forClosing(owner)
+          return service?.forClosing(owner, sessionId)
         },
         // Whether the browser itself is connected over loopback (produced-chip gating).
         isLoopback: connection.isLoopback,
