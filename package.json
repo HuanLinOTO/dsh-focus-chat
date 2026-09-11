@@ -1,6 +1,6 @@
 {
   "name": "@huanlin/dsh-focus-chat",
-  "version": "0.1.24",
+  "version": "0.1.25",
   "description": "Claude Code-style focus view for the dsh web GUI: the conversation's condensed reading surface — tool calls folded into expandable metric summaries, chat 1:1 row chrome, and streaming think rows",
   "type": "module",
   "main": "lib/index.js",
