@@ -1,5 +1,5 @@
 import { memo, useState } from 'react'
-import { DisclosureRow, IconBrowseOutline16 } from '@deepseek-ai/dsh-client-ui-primitives'
+import { DisclosureRow, IconBrowseOutlineRegular } from '@deepseek-ai/dsh-client-ui-primitives'
 import type { FocusTranslate } from '../../contract/props.ts'
 import css from './SystemPromptRow.module.css'
 
@@ -18,7 +18,7 @@ export const SystemPromptRow = memo(function SystemPromptRow({ text, t }: {
   return (
     <DisclosureRow
       className={css.root}
-      icon={<IconBrowseOutline16 size={14} />}
+      icon={<IconBrowseOutlineRegular size={14} />}
       chevronClassName={css.chevron}
       title={t('systemPrompt')}
       open={open}

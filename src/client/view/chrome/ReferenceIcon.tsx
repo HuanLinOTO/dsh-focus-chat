@@ -2,7 +2,7 @@
  *  reimplemented here because the npm package does not re-export them. */
 import type { ReactNode } from 'react'
 import {
-  IconBrowseOutline16, IconFolderClose16,
+  IconBrowseOutlineRegular, IconFolderCloseRegular,
 } from '@deepseek-ai/dsh-client-ui-primitives'
 
 /** Reference domains with distinct composer and transcript glyphs. */
@@ -31,7 +31,7 @@ export function ReferenceIcon({ kind, size = 16, className }: ReferenceIconProps
           />
         </svg>
       )
-    case 'file': return <IconBrowseOutline16 size={size} className={className} />
-    case 'folder': return <IconFolderClose16 size={size} className={className} />
+    case 'file': return <IconBrowseOutlineRegular size={size} className={className} />
+    case 'folder': return <IconFolderCloseRegular size={size} className={className} />
   }
 }

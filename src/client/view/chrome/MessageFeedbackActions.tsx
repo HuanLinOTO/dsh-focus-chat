@@ -16,7 +16,7 @@ import {
 } from 'react'
 import { createPortal } from 'react-dom'
 import {
-  IconDislikeOutline16, IconLikeOutline16, Tooltip, useAnchoredPosition,
+  IconDislikeOutlineRegular, IconLikeOutlineRegular, Tooltip, useAnchoredPosition,
 } from '@deepseek-ai/dsh-client-ui-primitives'
 import type { SnapshotSelectorHook } from '@deepseek-ai/dsh-client-ui-slots'
 import type { MessageId } from '@deepseek-ai/dsh-client-connection/client'
@@ -268,7 +268,7 @@ export function MessageFeedbackActions({ messageId, ensure, rate, toggle, clearN
           onPointerEnter={seed}
           onClick={() => { onRate('positive') }}
         >
-          <IconLikeOutline16 />
+          <IconLikeOutlineRegular />
         </button>
       </Tooltip>
       <Tooltip label={dislikeLabel} side="bottom">
@@ -283,7 +283,7 @@ export function MessageFeedbackActions({ messageId, ensure, rate, toggle, clearN
           onPointerEnter={seed}
           onClick={() => { onRate('negative') }}
         >
-          <IconDislikeOutline16 />
+          <IconDislikeOutlineRegular />
         </button>
       </Tooltip>
       {rating !== undefined && (

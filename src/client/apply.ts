@@ -4,13 +4,14 @@
 /** Required services: the view slot, the locale registry, sessions, the connection facts, the Conversation image resolver, and the Remote namespaces. */
 export const inject = [
   'slots', 'locale', 'sessions', 'uiConversation', 'connection',
-  'remote', 'remote.session', 'remote.messageFeedback',
+  'remote', 'remote.session', 'remote.messageFeedback', 'uiWorkspace',
 ]
 import type { Context } from '@deepseek-ai/cordis'
 // Type-only service merges consumed by the apply world.
 import type {} from '@deepseek-ai/dsh-client-ui-chat/client'
 import type {} from '@deepseek-ai/dsh-client-ui-renderer/client'
 import type {} from '@deepseek-ai/dsh-client-ui-session/client'
+import type {} from '@deepseek-ai/dsh-client-ui-workspace/client'
 import type {} from '@deepseek-ai/dsh-api-remotes/client'
 import { resolveWorkspacePath } from '@deepseek-ai/dsh-util-workspace-path'
 import type { SessionId } from '@deepseek-ai/dsh-session/types'
@@ -103,9 +104,11 @@ export function apply(ctx: Context): void {
           if (!result.ok) throw new Error(`path open failed: ${result.error.message}`)
         },
         // Fork the session at one message seq (the chat view's branch semantics).
+        // 0.1.7-rc.1 moved Session navigation out of the Sessions controller
+        // into the ui-workspace navigation service.
         forkAt: (seq) => {
           ctx.sessions.fork({ sessionId, atSeq: seq, increaseTitle: true })
-            .then(childId => { ctx.sessions.open(childId) })
+            .then(childId => { ctx.uiWorkspace.openSession(childId) })
             .catch(() => {
               // Fork or child-rename failure keeps the source view untouched.
             })

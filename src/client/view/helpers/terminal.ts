@@ -27,6 +27,7 @@ export function terminalLabels(t: FocusTranslate): TerminalBlockLabels {
   return {
     signal: signal => t('terminal.signal', { signal }),
     exitCode: code => t('terminal.exitCode', { code }),
+    noExitCode: t('terminal.noExitCode'),
     running: t('terminal.running'),
     failed: t('terminal.failed'),
     done: t('terminal.done'),
@@ -43,19 +44,24 @@ export function terminalLabels(t: FocusTranslate): TerminalBlockLabels {
 /** Diff-card labels bound to the focus locale. */
 export function diffLabels(t: FocusTranslate): DiffBlockLabels {
   return {
+    codeLabel: t('terminal.codeLabel'),
+    wrapLabel: t('terminal.wrapLabel'),
+    unwrapLabel: t('terminal.unwrapLabel'),
     copy: t('copy'),
     copied: t('copied'),
     collapseAria: t('diff.collapseAria'),
     expandAria: count => t('diff.expandAria', { count }),
     collapse: t('terminal.collapse'),
     expand: hidden => t('terminal.expand', { n: hidden }),
-    files: count => t('diff.files', { count }),
   }
 }
 
 /** Read-card labels bound to the focus locale. */
 export function readLabels(t: FocusTranslate): ReadBlockLabels {
   return {
+    codeLabel: t('terminal.codeLabel'),
+    wrapLabel: t('terminal.wrapLabel'),
+    unwrapLabel: t('terminal.unwrapLabel'),
     window: (shown, total) => t('read.window', { shown, total }),
     copy: t('copy'),
     copied: t('copied'),

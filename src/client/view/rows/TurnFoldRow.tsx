@@ -1,5 +1,5 @@
 import { memo, useState } from 'react'
-import { IconChevronDownOutline14 } from '@deepseek-ai/dsh-client-ui-primitives'
+import { IconChevronDownOutlineMedium } from '@deepseek-ai/dsh-client-ui-primitives'
 import type { MarkdownLabels, MarkdownFileMentions } from '@deepseek-ai/dsh-client-ui-primitives'
 import type { FocusTranslate } from '../../contract/props.ts'
 import type { FocusFlowItem } from '../../model/types.ts'
@@ -45,7 +45,7 @@ export const TurnFoldRow = memo(function TurnFoldRow({ item, t, mdLabels, openFi
             ? t('turnFold.stopped', { duration })
             : t('worked', { duration })}
         </span>
-        <IconChevronDownOutline14 className={css.chevron} />
+        <IconChevronDownOutlineMedium className={css.chevron} />
       </button>
       {expanded && (
         <div className={css.turnFoldBody} data-turn-fold-body>

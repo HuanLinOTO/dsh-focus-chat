@@ -155,7 +155,7 @@ export type FocusFlowItem =
     /** Skill names the step's skill-invocation injections loaded for this message. */
     skillNames?: readonly string[]
     /** Context-injection chrome (the chat ContextInjectionRow); absent for user/steering. */
-    context?: { source: ContextMessageNode['source']; provenance: ContextMessageNode['provenance']; form: ContextMessageNode['form'] }
+    context?: { source: ContextMessageNode['source']; producer: ContextMessageNode['producer']; form: ContextMessageNode['form'] }
   }
   | {
     /**

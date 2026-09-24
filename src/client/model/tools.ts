@@ -153,24 +153,17 @@ const TOOL_VARIANTS: Readonly<Record<string, FocusToolVariant>> = {
   edit: 'edit',
   str_replace_editor: 'edit',
   run_code: 'code',
-  cordis_package_inspect: 'read',
-  cordis_runtime_inspect: 'read',
-  // The three run-control verbs take one package id and produce a receipt,
-  // so the generic row is the decided intent, not an unclassified default:
-  // the id lands in the summary slot and the titles name the act.
-  cordis_run: 'others',
-  cordis_stop: 'others',
-  cordis_undefine: 'others',
+  // tool-cordis is read-only inspection since dsh 0.1.7-rc.1: the dynamic
+  // define/run/stop/undefine verbs are gone, leaving the two inspection tools.
+  cordis_inspect_list: 'read',
+  cordis_inspect_query: 'read',
 }
 
 /** Tool-owned title keys that refine a generic row variant without replacing
  *  it (the official tool.title vocabulary for the named tools). */
 const TOOL_TITLES: Readonly<Record<string, string>> = {
-  cordis_package_inspect: 'tool.title.inspect',
-  cordis_runtime_inspect: 'tool.title.inspect',
-  cordis_run: 'tool.title.runCordis',
-  cordis_stop: 'tool.title.stopCordis',
-  cordis_undefine: 'tool.title.removeCordis',
+  cordis_inspect_list: 'tool.title.inspect',
+  cordis_inspect_query: 'tool.title.inspect',
   job_output: 'tool.title.jobOutput',
   job_kill: 'tool.title.jobKill',
   job_list: 'tool.title.jobList',
@@ -279,9 +272,11 @@ interface ParsedCall {
   args: Record<string, unknown>
 }
 
-/** Parse the call head paired with one immutable Tool block (null when the head or the JSON object is unavailable). */
+/** Parse the call head paired with one immutable Tool block (null when the head, the JSON object, or the dispatched arguments are unavailable). */
 function parsedCall(block: ToolCallBlock): ParsedCall | null {
-  const call = 'kind' in block ? block.call : block
+  // A `preparing` call carries no dispatched arguments yet (tool.call.toolview's
+  // three-phase union): there is nothing to parse until the start phase.
+  const call = 'kind' in block ? block.call : block.phase === 'preparing' ? null : block
   if (call === null) return null
   const parsed = parseArgs(call.argsRaw)
   if (typeof parsed !== 'object' || parsed === null) return null
@@ -691,7 +686,8 @@ export function toolRowModel(block: ToolCallBlock, cwd?: string, home?: string, 
 function toolRowModelUncached(block: ToolCallBlock, cwd?: string, home?: string, cache?: ToolRowModelCache): FocusToolRow {
   const done = 'kind' in block
   const name = done ? block.call?.name ?? '' : block.name
-  const argsRaw = done ? block.call?.argsRaw ?? '' : block.argsRaw
+  // `preparing` calls have no dispatched arguments yet (the toolview phase union).
+  const argsRaw = done ? block.call?.argsRaw ?? '' : block.phase === 'preparing' ? '' : block.argsRaw
   const errorCode = done && block.error !== undefined ? block.error.code : null
   const state: FocusToolState = !done ? 'running'
     : block.error !== undefined && STOPPED_TOOL_CODES.has(block.error.code) ? 'stopped'

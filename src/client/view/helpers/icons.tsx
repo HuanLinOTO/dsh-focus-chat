@@ -1,20 +1,20 @@
 /** Tool-family leading icons (the chat GenericToolCard table). */
 import type { ReactNode } from 'react'
-import { IconApiOutline14, IconBrowseOutline16, IconChecklistOutline14, IconCodeOutline16, IconEditOutline16, IconQuestionOutline14, IconSearchOutline16, IconSkillOutline16, IconSparkle16, StateDot } from '@deepseek-ai/dsh-client-ui-primitives'
+import { IconApiOutlineMedium, IconBrowseOutlineRegular, IconChecklistOutlineMedium, IconCodeOutlineRegular, IconEditOutlineRegular, IconQuestionOutlineMedium, IconSearchOutlineRegular, IconSkillOutlineRegular, IconSparkleRegular, StateDot } from '@deepseek-ai/dsh-client-ui-primitives'
 import type { FocusToolRow } from '../../model/types.ts'
 
 /** Tool-family leading icons, mirroring the chat GenericToolCard table (glyphs at 14). */
 export const VARIANT_ICONS: Record<'search' | 'read' | 'bash' | 'write' | 'edit' | 'code' | 'question' | 'todo' | 'skill' | 'others', ReactNode> = {
-  search: <IconSearchOutline16 size={14} />,
-  read: <IconBrowseOutline16 size={14} />,
-  bash: <IconApiOutline14 size={14} />,
-  write: <IconEditOutline16 size={14} />,
-  edit: <IconEditOutline16 size={14} />,
-  code: <IconCodeOutline16 size={14} />,
-  question: <IconQuestionOutline14 size={14} />,
-  todo: <IconChecklistOutline14 size={14} />,
-  skill: <IconSkillOutline16 size={14} />,
-  others: <IconSparkle16 size={14} />,
+  search: <IconSearchOutlineRegular size={14} />,
+  read: <IconBrowseOutlineRegular size={14} />,
+  bash: <IconApiOutlineMedium size={14} />,
+  write: <IconEditOutlineRegular size={14} />,
+  edit: <IconEditOutlineRegular size={14} />,
+  code: <IconCodeOutlineRegular size={14} />,
+  question: <IconQuestionOutlineMedium size={14} />,
+  todo: <IconChecklistOutlineMedium size={14} />,
+  skill: <IconSkillOutlineRegular size={14} />,
+  others: <IconSparkleRegular size={14} />,
 }
 
 /** Tool name → leading-icon family (mirrors the chat row classification). */
@@ -33,11 +33,8 @@ export const TOOL_VARIANTS: Readonly<Record<string, keyof typeof VARIANT_ICONS>>
   edit: 'edit',
   str_replace_editor: 'edit',
   run_code: 'code',
-  cordis_package_inspect: 'read',
-  cordis_runtime_inspect: 'read',
-  cordis_run: 'others',
-  cordis_stop: 'others',
-  cordis_undefine: 'others',
+  cordis_inspect_list: 'read',
+  cordis_inspect_query: 'read',
   ask_user_question: 'question',
 }
 

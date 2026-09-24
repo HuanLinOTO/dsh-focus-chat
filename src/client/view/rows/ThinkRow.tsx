@@ -1,5 +1,5 @@
 import { memo, useEffect, useRef, useState } from 'react'
-import { DisclosureRow, IconThinkOutline14 } from '@deepseek-ai/dsh-client-ui-primitives'
+import { DisclosureRow, IconThinkOutlineMedium } from '@deepseek-ai/dsh-client-ui-primitives'
 import type { FocusTranslate } from '../../contract/props.ts'
 import { firstLine, latestLines, useThrottledVisualUpdate } from '../helpers/format.ts'
 import a11yCss from '../accessibility.module.css'
@@ -40,7 +40,7 @@ export const ThinkRow = memo(function ThinkRow({ text, running, title, t }: {
       {running && <span className={a11yCss.visuallyHidden}>{t('row.running')}</span>}
       <DisclosureRow
         className={css.thinkRow}
-        icon={<IconThinkOutline14 size={14} />}
+        icon={<IconThinkOutlineMedium size={14} />}
         title={title}
         open={expanded}
         expandable

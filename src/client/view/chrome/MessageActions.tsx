@@ -1,5 +1,5 @@
 import { memo, useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
-import { IconBranchOutline16, IconCheckOutline16, IconCopyOutline16, Tooltip, writeClipboard } from '@deepseek-ai/dsh-client-ui-primitives'
+import { IconBranchOutlineRegular, IconCheckOutlineRegular, IconCopyOutlineRegular, Tooltip, writeClipboard } from '@deepseek-ai/dsh-client-ui-primitives'
 import type { FocusTranslate } from '../../contract/props.ts'
 import { formatElapsed, formatMessageClock, formatTokensPerSecond, useCalendarDay } from '../helpers/format.ts'
 import { formatSeconds } from '../../model/text.ts'
@@ -93,7 +93,7 @@ export const MessageActions = memo(function MessageActions({ text, time, runMs, 
           aria-label={copied ? t('copied') : t('copy')}
           onClick={onCopy}
         >
-          {copied ? <IconCheckOutline16 /> : <IconCopyOutline16 />}
+          {copied ? <IconCheckOutlineRegular /> : <IconCopyOutlineRegular />}
         </button>
       </Tooltip>
       {extraActions}
@@ -108,7 +108,7 @@ export const MessageActions = memo(function MessageActions({ text, time, runMs, 
             data-unavailable={branchUnavailable || undefined}
             onClick={branchUnavailable ? undefined : onBranch}
           >
-            <IconBranchOutline16 />
+            <IconBranchOutlineRegular />
           </button>
         </Tooltip>
       )}

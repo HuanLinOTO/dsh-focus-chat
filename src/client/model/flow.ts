@@ -3,7 +3,7 @@ import type { AssistantChatData, ChatNodeDataMap, ChatNodeKind, ManualCompaction
 import type { AssistantBlock, ChatConversationViewNode, CommandNode, CompactionSummaryNode, ContextMessageNode, SteeringMessageNode, ToolCallBlock, TurnErrorNode, UserMessageNode } from '@deepseek-ai/dsh-client-ui-chat/client'
 import { toolGroup, type ToolRowModelCache } from './tools.ts'
 import { assistantText, producedForClosing, thoughtDurationMs } from './text.ts'
-import type { FocusContextItem, FocusFlowItem, FocusGroupThink, FocusNodeData, FocusToolGroup } from './types.ts'
+import type { FocusContextItem, FocusDeliverablesData, FocusFlowItem, FocusGroupThink, FocusNodeData, FocusToolGroup } from './types.ts'
 
 /**
  * One derived flow item plus the identity facts it was derived from. The
@@ -58,6 +58,7 @@ export const CHAT_KIND_DISPOSITION = {
   'turn-max-tokens': 'turn-max-tokens',
   'turn-process': 'dropped',
   'turn-tail': 'turn-tail',
+  'turn-trigger': 'message',
   'unknown': 'unknown',
   'user': 'message',
 } satisfies Record<ChatNodeKind, string>
@@ -97,7 +98,8 @@ function flowItemOf(
   switch (node.kind) {
     case 'user':
     case 'steering':
-    case 'context': {
+    case 'context':
+    case 'turn-trigger': {
       // The chat message nodes carry the reference/skill chip sources the
       // shared user-text projection decorates (ui-chat's message.ts merge).
       const message = data as (UserMessageNode | SteeringMessageNode | ContextMessageNode) & {
@@ -107,17 +109,20 @@ function flowItemOf(
       const base = {
         kind: 'message' as const,
         nodeKey: key,
-        role: node.kind,
+        // A turn-trigger is a non-human ContextMessageNode that opens a Turn
+        // (ui-chat's message.ts merge); the focus view presents it with the
+        // context-injection chrome.
+        role: node.kind === 'turn-trigger' ? 'context' as const : node.kind,
         content: message.content,
         time: message.time,
         referenceLabels: message.referenceLabels,
         skillNames: message.skillNames,
       }
-      if (node.kind !== 'context') return base
+      if (node.kind !== 'context' && node.kind !== 'turn-trigger') return base
       const context = message as ContextMessageNode
       return {
         ...base,
-        context: { source: context.source, provenance: context.provenance, form: context.form },
+        context: { source: context.source, producer: context.producer, form: context.form },
       }
     }
     case 'assistant-step': {
@@ -222,7 +227,27 @@ function flowItemOf(
       const runMs = turn === undefined || turn.start === undefined || turn.end === undefined
         ? null
         : Math.max(0, turn.end.time - turn.start.time)
-      const produced = producedForClosing(turn?.data.get('deliverables'), closing?.finalNode.seq ?? tail.seq)
+      // The ui-deliverables `deliverables` turn-data augmentation is no longer
+      // reachable from its npm client entry (the declaring module is dropped
+      // from the emitted index.d.ts); read the same shape through a local
+      // narrowing instead of the merge.
+      const deliverables = turn === undefined
+        ? undefined
+        : (turn.data as unknown as { get(key: string): Readonly<FocusDeliverablesData> | undefined }).get('deliverables')
+      const produced = producedForClosing(deliverables, closing?.finalNode.seq ?? tail.seq)
+      // TurnTailChatData dropped the precomputed ttftMs/tokensPerSecond in
+      // 0.1.7-rc.1; derive them from the closing assistant's recorded timing
+      // and the exact per-turn token accounting.
+      const timing = closing?.finalNode.timing
+      const ttftMs = timing !== undefined && timing.stepStartTime !== null && timing.firstTokenTime !== null
+        ? Math.max(0, timing.firstTokenTime - timing.stepStartTime)
+        : null
+      const decodeMs = timing !== undefined && timing.firstTokenTime !== null
+        ? timing.completedTime - timing.firstTokenTime
+        : null
+      const tokensPerSecond = tail.tokenUsage !== undefined && decodeMs !== null && decodeMs > 0
+        ? tail.tokenUsage.outputTokens / (decodeMs / 1000)
+        : null
       return {
         kind: 'turn-tail',
         nodeKey: key,
@@ -234,8 +259,8 @@ function flowItemOf(
         closingTime: closing?.time ?? null,
         closingText: closing === null ? '' : assistantText(closing.blocks),
         runMs,
-        ttftMs: tail.ttftMs ?? null,
-        tokensPerSecond: tail.tokensPerSecond ?? null,
+        ttftMs,
+        tokensPerSecond,
         branchUnavailable: tail.branchUnavailable,
         produced,
         tokenUsage: tail.tokenUsage,

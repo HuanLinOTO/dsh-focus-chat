@@ -1,5 +1,5 @@
 import { memo, useState, type ReactNode } from 'react'
-import { DisclosureRow, IconContextInjectionOutline16, JsonBlock } from '@deepseek-ai/dsh-client-ui-primitives'
+import { DisclosureRow, IconContextInjectionOutlineRegular, JsonBlock } from '@deepseek-ai/dsh-client-ui-primitives'
 import type { MarkdownLabels } from '@deepseek-ai/dsh-client-ui-primitives'
 import type { FocusTranslate } from '../../contract/props.ts'
 import { ReferenceIcon } from '../chrome/ReferenceIcon.tsx'
@@ -451,7 +451,7 @@ export const ContextRow = memo(function ContextRow({ item, t, mdLabels }: {
 }) {
   const [open, setOpen] = useState(false)
   const context = item.context
-  const provenance = context?.provenance
+  const provenance = context?.producer
   const label = provenance === undefined ? null : provenance.label
   const form = context?.form ?? null
   const { rendered, summary, body } = contextBody(form, {
@@ -469,7 +469,7 @@ export const ContextRow = memo(function ContextRow({ item, t, mdLabels }: {
       chevronClassName={css.contextChevron}
       icon={recall
         ? <span data-context-recall-icon><ReferenceIcon kind="session" /></span>
-        : <IconContextInjectionOutline16 size={14} />}
+        : <IconContextInjectionOutlineRegular size={14} />}
       title={title}
       open={open}
       expandable
@@ -517,7 +517,7 @@ export const ContextFoldRow = memo(function ContextFoldRow({ item, t, mdLabels }
       <DisclosureRow
         className={css.contextFoldRow}
         chevronClassName={css.contextChevron}
-        icon={<IconContextInjectionOutline16 size={14} />}
+        icon={<IconContextInjectionOutlineRegular size={14} />}
         title={title}
         open={open}
         expandable

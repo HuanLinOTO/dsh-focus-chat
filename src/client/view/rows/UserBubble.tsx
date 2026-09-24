@@ -2,6 +2,7 @@ import { memo, useMemo } from 'react'
 import { JsonBlock, projectUserText } from '@deepseek-ai/dsh-client-ui-primitives'
 import type { MarkdownLabels } from '@deepseek-ai/dsh-client-ui-primitives'
 import type { ContentBlock } from '@deepseek-ai/dsh-llm/types'
+import type { PendingSubmission } from '@deepseek-ai/dsh-api-session-controller/client'
 import type { FocusTranslate } from '../../contract/props.ts'
 import type { FocusFlowItem } from '../../model/types.ts'
 import { jsonTruncated } from '../helpers/terminal.ts'
@@ -56,29 +57,40 @@ export const MessageRow = memo(function MessageRow({ item, t, mdLabels, loadImag
 })
 
 
-export const PendingSteeringBubble = memo(function PendingSteeringBubble({ content, t, loadImage }: {
-  content: readonly ContentBlock[]
+export const PendingSteeringBubble = memo(function PendingSteeringBubble({ submission, t }: {
+  submission: PendingSubmission
   t: FocusTranslate
-  loadImage: ImageLoader
 }) {
-  const text = useMemo(() => messageText(content), [content])
-  const images = useMemo(() => userImages(content), [content])
-  const others = content.filter(block => block.type !== 'text' && block.type !== 'image')
-  const showBubble = text !== '' || others.length > 0
+  // 0.1.7-rc.1's SessionSnapshot replaced the authoritative `queue` with the
+  // local submission echo: `text` plus image/file attachments. Image previews
+  // are browser-owned URLs, so they render directly (no session loader).
+  const text = submission.text
+  const images = submission.attachments.filter(attachment => attachment.type === 'image')
+  const files = submission.attachments.filter(attachment => attachment.type === 'file')
+  const showBubble = text !== '' || files.length > 0
   return (
     <div className={css.userRow} data-pending-steering data-time-hover-root>
       <div className={css.userStack}>
         {images.length > 0 && (
-          <ImageGallery images={images} load={loadImage} align="end" labels={messageImageLabels(t)} />
+          <div className={css.bubble} data-pending-images>
+            {images.map((attachment, index) => attachment.type === 'image' && (
+              <img
+                key={index}
+                className={css.pendingImage}
+                src={attachment.value.previewUrl}
+                alt={attachment.value.name ?? ''}
+              />
+            ))}
+          </div>
         )}
         {showBubble && (
           <div className={css.bubble}>
             {projectUserText(text, [])}
-            {others.map((block, index) => (
+            {files.map((attachment, index) => (
               <JsonBlock
                 key={index}
                 label={t('extraBlock')}
-                payload={block}
+                payload={attachment}
                 truncatedLabel={jsonTruncated(t)}
               />
             ))}

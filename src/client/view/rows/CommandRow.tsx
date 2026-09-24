@@ -1,5 +1,5 @@
 import { memo, useState } from 'react'
-import { DisclosureRow, IconApiOutline14, StateDot } from '@deepseek-ai/dsh-client-ui-primitives'
+import { DisclosureRow, IconApiOutlineMedium, StateDot } from '@deepseek-ai/dsh-client-ui-primitives'
 import type { FocusTranslate } from '../../contract/props.ts'
 import type { FocusFlowItem } from '../../model/types.ts'
 import a11yCss from '../accessibility.module.css'
@@ -28,7 +28,7 @@ export const CommandRow = memo(function CommandRow({ item, runningSummary, t }: 
       {item.running && <span className={a11yCss.visuallyHidden}>{t('row.running')}</span>}
       <DisclosureRow
         className={css.commandRowInner}
-        icon={item.outcomeError ? <StateDot state="error" /> : <IconApiOutline14 size={14} />}
+        icon={item.outcomeError ? <StateDot state="error" /> : <IconApiOutlineMedium size={14} />}
         title={title}
         open={open}
         expandable={body !== null}

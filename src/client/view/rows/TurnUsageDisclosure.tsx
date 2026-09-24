@@ -1,5 +1,5 @@
 import { memo, useState } from 'react'
-import { DisclosureRow, IconDataOutline16 } from '@deepseek-ai/dsh-client-ui-primitives'
+import { DisclosureRow, IconDataOutlineRegular } from '@deepseek-ai/dsh-client-ui-primitives'
 import type { TurnTailChatData } from '@deepseek-ai/dsh-client-ui-chat/client'
 type TurnTokenUsage = NonNullable<TurnTailChatData['tokenUsage']>
 import type { FocusTranslate } from '../../contract/props.ts'
@@ -51,7 +51,7 @@ export const TurnUsageDisclosure = memo(function TurnUsageDisclosure({ usage, t 
 
   return (
     <DisclosureRow
-      icon={<IconDataOutline16 />}
+      icon={<IconDataOutlineRegular />}
       title={t('turnUsage.title')}
       open={open}
       expandable

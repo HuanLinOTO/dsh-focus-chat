@@ -48,11 +48,14 @@ function settledCall(callId: string, name: string, argsRaw: string, overrides: P
 }
 
 function runningCall(callId: string, name: string, argsRaw = '{}'): RunningToolCall {
-  return { callId, name, argsRaw, turn: 1, step: 1, time: 1000, subCalls: [] }
+  return { phase: 'start', callId, name, argsRaw, turn: 1, step: 1, time: 1000, subCalls: [] }
 }
 
 /** Empty Chat node source stub (the view never binds keyed sources directly). */
 const EMPTY_NODE_SOURCE = { getSnapshot: () => undefined, subscribe: () => () => {} }
+
+/** Empty observable list source (the ChatNodeStore's turn-data reader). */
+const EMPTY_LIST_SOURCE = { getSnapshot: () => [] as const, subscribe: () => () => {} }
 
 /** The full ChatNodeStore face over a fixture map (keyed sources stay unexercised). */
 function nodeStoreOf(nodesByKey: Map<string, ReturnType<typeof chatNode>>) {
@@ -61,6 +64,7 @@ function nodeStoreOf(nodesByKey: Map<string, ReturnType<typeof chatNode>>) {
     values: () => [...nodesByKey.values()],
     source: () => EMPTY_NODE_SOURCE,
     processSource: () => EMPTY_NODE_SOURCE,
+    turnDataSource: () => EMPTY_LIST_SOURCE,
   }
 }
 
@@ -68,28 +72,25 @@ function sessionsStore(cwd: string | undefined) {
   return createSnapshotStore<SessionListState>({
     ids: [SID],
     byId: { [SID]: { id: SID, cwd } } as SessionListState['byId'],
-    current: SID,
     phase: 'ready',
-    subagentsByParent: {},
-    jobsBySession: {},
-    currentAddress: undefined,
+    projectionsBySession: {},
   })
 }
 
 /** The composed view slice: session lifecycle next to the chat snapshot. */
 type ViewSlice = {
-  session: Pick<SessionSnapshot, 'running' | 'hasMore' | 'loadingOlder' | 'queue' | 'openState' | 'openError'>
+  session: Pick<SessionSnapshot, 'running' | 'hasMore' | 'loadingOlder' | 'pendingSubmissions' | 'openState' | 'openError'>
   chat: ChatSnapshot
 }
 
-function chatOf(nodes: ReturnType<typeof chatNode>[], opts: { running?: boolean; hasMore?: boolean; loadingOlder?: boolean; queue?: SessionSnapshot['queue']; openState?: SessionSnapshot['openState']; openError?: SessionSnapshot['openError']; navigation?: readonly TurnNavigationItem[] } = {}): ViewSlice {
+function chatOf(nodes: ReturnType<typeof chatNode>[], opts: { running?: boolean; hasMore?: boolean; loadingOlder?: boolean; pendingSubmissions?: SessionSnapshot['pendingSubmissions']; openState?: SessionSnapshot['openState']; openError?: SessionSnapshot['openError']; navigation?: readonly TurnNavigationItem[] } = {}): ViewSlice {
   const nodesByKey = new Map(nodes.map(n => [n.key, n]))
   return {
     session: {
       running: opts.running ?? false,
       hasMore: opts.hasMore ?? false,
       loadingOlder: opts.loadingOlder ?? false,
-      queue: opts.queue ?? [],
+      pendingSubmissions: opts.pendingSubmissions ?? [],
       openState: opts.openState ?? 'cold',
       openError: opts.openError ?? null,
     },
@@ -307,7 +308,7 @@ it('renders the empty hint for an empty conversation', () => {
         running: true,
         hasMore: false,
         loadingOlder: false,
-        queue: [],
+        pendingSubmissions: [],
         openState: 'cold',
         openError: null,
       },
@@ -344,7 +345,7 @@ it('renders the empty hint for an empty conversation', () => {
           running: false,
           hasMore: false,
           loadingOlder: false,
-          queue: [],
+          pendingSubmissions: [],
           openState: 'cold',
           openError: null,
         },
@@ -1495,9 +1496,9 @@ it('renders the empty hint for an empty conversation', () => {
   it('renders pending steering as a pre-admission bubble', () => {
     renderView([], {
       chat: chatOf([], {
-        queue: [{
-          id: 'q1' as never, messageId: 'm1' as never, placement: 'steering',
-          content: [{ type: 'text', text: 'hold on' }], preview: 'hold on', text: 'hold on',
+        pendingSubmissions: [{
+          requestId: 'q1' as never, placement: 'steering', time: 1,
+          text: 'hold on', attachments: [],
         }],
       }),
     })
@@ -2054,7 +2055,7 @@ it('renders the empty hint for an empty conversation', () => {
   it('bounds oversized JSON payloads with the truncation footer', () => {
     renderView([
       chatNode('t1', 'tool-call', { root: settledCall('c1', 'bash', '{}', {
-        content: [{ type: 'tool-result', toolCallId: 'tc1' as never, content: [{ type: 'text', text: 'y'.repeat(21_000) }] }],
+        content: [{ type: 'tool-addition', toolName: `tool-result${'y'.repeat(21_000)}` }],
       }) }),
     ])
     fireEvent.click(screen.getByText('运行了 1 个命令'))

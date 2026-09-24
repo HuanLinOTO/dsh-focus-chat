@@ -1,5 +1,5 @@
 import { memo, useState } from 'react'
-import { IconApiOutline14, IconChevronDownOutline14, IconChevronRightOutline14, MarkdownText } from '@deepseek-ai/dsh-client-ui-primitives'
+import { IconApiOutlineMedium, IconChevronDownOutlineMedium, IconChevronRightOutlineMedium, MarkdownText } from '@deepseek-ai/dsh-client-ui-primitives'
 import type { MarkdownLabels } from '@deepseek-ai/dsh-client-ui-primitives'
 import type { FocusTranslate } from '../../contract/props.ts'
 import type { FocusFlowItem } from '../../model/types.ts'
@@ -37,10 +37,10 @@ export const CompactionRow = memo(function CompactionRow({ item, title, fallback
       >
         <span className={css.compactionLeading} aria-hidden>
           <span className={css.compactionContextIcon} data-compaction-icon="context">
-            <IconApiOutline14 />
+            <IconApiOutlineMedium />
           </span>
           <span className={css.compactionDisclosureIcon} data-compaction-disclosure={open ? 'expanded' : 'collapsed'}>
-            {!open ? <IconChevronRightOutline14 /> : <IconChevronDownOutline14 />}
+            {!open ? <IconChevronRightOutlineMedium /> : <IconChevronDownOutlineMedium />}
           </span>
         </span>
         <span className={css.compactionTitle}>{title ?? t('compaction')}</span>

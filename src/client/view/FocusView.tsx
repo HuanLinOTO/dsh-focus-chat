@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
-import { Button, IconChevronDownOutline14, Modal } from '@deepseek-ai/dsh-client-ui-primitives'
+import { Button, IconChevronDownOutlineMedium, Modal } from '@deepseek-ai/dsh-client-ui-primitives'
 import type { MarkdownFileMentions, MarkdownLabels } from '@deepseek-ai/dsh-client-ui-primitives'
 // Type-only: pulls the ui-chat merge (useChat on the session standard kit).
 import type {} from '@deepseek-ai/dsh-client-ui-chat/client'
@@ -198,7 +198,7 @@ export function FocusView({
   const running = useSession(s => s.running)
   const hasMore = useSession(s => s.hasMore)
   const loadingOlder = useSession(s => s.loadingOlder)
-  const inbox = useSession(s => s.queue)
+  const pendingSubmissions = useSession(s => s.pendingSubmissions)
   const openState = useSession(s => s.openState)
   const openError = useSession(s => s.openError)
   const cwd = useSessions(s => s.byId[sessionId]?.cwd)
@@ -206,8 +206,8 @@ export function FocusView({
   // card displays as `~` (the ui-tool chat rule).
   const home = useHostHome(home => home)
   const pendingSteering = useMemo(
-    () => inbox.filter(item => item.placement === 'steering'),
-    [inbox],
+    () => pendingSubmissions.filter(item => item.placement === 'steering'),
+    [pendingSubmissions],
   )
   // Cross-build derivation cache: unchanged nodes keep their flow item and
   // tool-row identities, so memoized rows bail out during streaming.
@@ -359,7 +359,7 @@ export function FocusView({
   const lastItem = flow.at(-1)
   const firstKey = flow[0] === undefined ? null : flowKey(flow[0])
   const lastKey = lastItem === undefined ? null : flowKey(lastItem)
-  const lastSteeringId = pendingSteering[pendingSteering.length - 1]?.id ?? ''
+  const lastSteeringId = pendingSteering[pendingSteering.length - 1]?.requestId ?? ''
   const followSig = `${openState}:${firstKey}:${lastKey}:${flow.length}:${running ? 1 : 0}:${lastSteeringId}`
 
   const toBottom = (el: HTMLElement): void => {
@@ -643,7 +643,7 @@ export function FocusView({
         )}
         {running && <RunningStatus startTime={runningTurnStart} t={t} />}
         {pendingSteering.map(item => (
-          <PendingSteeringBubble key={item.id} content={item.content} t={t} loadImage={loadImage} />
+          <PendingSteeringBubble key={item.requestId} submission={item} t={t} />
         ))}
         {!atBottom && (
           <div className={css.toBottomSlot}>
@@ -657,7 +657,7 @@ export function FocusView({
                 if (local !== null) toBottom(scrollerOf(local))
               }}
             >
-              <IconChevronDownOutline14 />
+              <IconChevronDownOutlineMedium />
             </button>
           </div>
         )}
