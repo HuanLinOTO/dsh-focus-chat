@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Focus Chat",
+    "description": "Claude Code-style focus tab for the dsh web GUI: a condensed reading surface for conversations — each assistant turn folds into expandable metric summary lines (think time, commands, file edits, background-job settlements), mid-turn interjections split per-stretch, and expanded rows keep the chat view's own chrome."
+  }
+}
