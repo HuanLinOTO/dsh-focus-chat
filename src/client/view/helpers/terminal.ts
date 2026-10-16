@@ -25,6 +25,7 @@ export function markdownLabels(t: FocusTranslate): MarkdownLabels {
 /** Terminal-card labels bound to the focus locale (the chat label seam). */
 export function terminalLabels(t: FocusTranslate): TerminalBlockLabels {
   return {
+    commandLine: line => t('terminal.commandLine', { n: line }),
     signal: signal => t('terminal.signal', { signal }),
     exitCode: code => t('terminal.exitCode', { code }),
     noExitCode: t('terminal.noExitCode'),

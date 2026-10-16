@@ -1,5 +1,5 @@
 import { memo, useMemo } from 'react'
-import { JsonBlock, projectUserText } from '@deepseek-ai/dsh-client-ui-primitives'
+import { JsonBlock, ReferenceChip, UserTextRun } from '@deepseek-ai/dsh-client-ui-primitives'
 import type { MarkdownLabels } from '@deepseek-ai/dsh-client-ui-primitives'
 import type { ContentBlock } from '@deepseek-ai/dsh-llm/types'
 import type { PendingSubmission } from '@deepseek-ai/dsh-api-session-controller/client'
@@ -11,6 +11,28 @@ import { messageText } from '../helpers/message.tsx'
 import { ImageGallery, type ImageLoader } from '../chrome/MessageImage.tsx'
 import { MessageActions } from '../chrome/MessageActions.tsx'
 import css from './UserBubble.module.css'
+
+/**
+ * Display-only echo of sent user text: a verbatim run plus non-interactive
+ * chips for the reference labels and loaded skill names the message carries.
+ * Chip matching is no longer the primitive's business rule, so the resolved
+ * labels append after the text instead of decorating their mentions inline.
+ */
+function UserEchoText({ text, referenceLabels, skillNames }: {
+  text: string
+  referenceLabels?: readonly string[]
+  skillNames?: readonly string[]
+}) {
+  return <>
+    <UserTextRun text={text} />
+    {referenceLabels?.map(label => (
+      <ReferenceChip key={`session:${label}`} appearance="session" label={label} title={`@${label}`} />
+    ))}
+    {skillNames?.map(name => (
+      <ReferenceChip key={`skill:${name}`} appearance="skill" label={`/${name}`} title={`/${name}`} />
+    ))}
+  </>
+}
 
 export const MessageRow = memo(function MessageRow({ item, t, mdLabels, loadImage }: {
   item: Extract<FocusFlowItem, { kind: 'message' }>
@@ -31,7 +53,7 @@ export const MessageRow = memo(function MessageRow({ item, t, mdLabels, loadImag
         )}
         {showBubble && (
           <div className={css.bubble}>
-            {projectUserText(text, item.referenceLabels ?? [], item.skillNames ?? [])}
+            <UserEchoText text={text} referenceLabels={item.referenceLabels} skillNames={item.skillNames} />
             {others.map((block, index) => (
               <JsonBlock
                 key={index}
@@ -85,7 +107,7 @@ export const PendingSteeringBubble = memo(function PendingSteeringBubble({ submi
         )}
         {showBubble && (
           <div className={css.bubble}>
-            {projectUserText(text, [])}
+            <UserTextRun text={text} />
             {files.map((attachment, index) => (
               <JsonBlock
                 key={index}

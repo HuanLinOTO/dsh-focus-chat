@@ -10,6 +10,7 @@ import type {
 } from '@deepseek-ai/dsh-client-ui-chat/client'
 import type { SessionId } from '@deepseek-ai/dsh-session/types'
 import type { SessionListState, SessionSnapshot } from '@deepseek-ai/dsh-api-session-controller/client'
+import { PartialArguments } from '@deepseek-ai/dsh-util-values'
 import { resolveSlotLabel } from '@deepseek-ai/dsh-client-ui-slots'
 import { FocusView } from '../src/client/view/FocusView.tsx'
 import type { FocusViewProps } from '../src/client/contract/props.ts'
@@ -41,18 +42,22 @@ function chatNode(
 
 function settledCall(callId: string, name: string, argsRaw: string, overrides: Partial<ToolResultNode> = {}): ToolResultNode {
   return {
-    kind: 'tool-result', seq: 2, time: 3000, callId, call: { name, argsRaw }, callTime: 1000,
+    kind: 'tool-result', seq: 2, time: 3000, callId, name, args: PartialArguments.fromText(argsRaw),
+    call: { name, argsRaw }, callTime: 1000,
     content: [], isError: false, subCalls: [],
     ...overrides,
   }
 }
 
 function runningCall(callId: string, name: string, argsRaw = '{}'): RunningToolCall {
-  return { phase: 'start', callId, name, argsRaw, turn: 1, step: 1, time: 1000, subCalls: [] }
+  return { phase: 'start', callId, name, args: PartialArguments.fromText(argsRaw), argsRaw, turn: 1, step: 1, time: 1000, subCalls: [] }
 }
 
 /** Empty Chat node source stub (the view never binds keyed sources directly). */
 const EMPTY_NODE_SOURCE = { getSnapshot: () => undefined, subscribe: () => () => {} }
+
+/** Empty bottom-anchor source stub (the ChatNodeStore's bottom reader). */
+const EMPTY_BOTTOM_SOURCE = { getSnapshot: () => false, subscribe: () => () => {} }
 
 /** Empty observable list source (the ChatNodeStore's turn-data reader). */
 const EMPTY_LIST_SOURCE = { getSnapshot: () => [] as const, subscribe: () => () => {} }
@@ -63,6 +68,7 @@ function nodeStoreOf(nodesByKey: Map<string, ReturnType<typeof chatNode>>) {
     get: (key: string) => nodesByKey.get(key),
     values: () => [...nodesByKey.values()],
     source: () => EMPTY_NODE_SOURCE,
+    bottomSource: () => EMPTY_BOTTOM_SOURCE,
     processSource: () => EMPTY_NODE_SOURCE,
     turnDataSource: () => EMPTY_LIST_SOURCE,
   }
@@ -930,18 +936,37 @@ it('renders the empty hint for an empty conversation', () => {
     expect(screen.getByText('This operation was aborted').closest('[data-error]')).toBeTruthy()
   })
 
-  it('renders the user message as a bubble with ref chips, clock, and copy', () => {
+  it('renders the user message as a verbatim text bubble with clock and copy', () => {
     renderView([
       chatNode('u1', 'user', {
         kind: 'user', seq: 1, time: 1,
         content: [{ type: 'text', text: 'hello /compact world @sub1' }], source: null,
       }),
     ])
-    // The shared user-text projection: unnamed /tokens stay plain, a bare
-    // @mention decorates as a reference chip (the chat bubble's projection).
-    expect(screen.getByText('hello /compact world')).toBeTruthy()
-    expect(document.querySelector('[data-ref-chip="file"]')?.textContent).toContain('sub1')
+    // The echo text renders verbatim: chip matching is no longer the
+    // primitive's business rule, so unnamed /tokens and bare @mentions stay
+    // plain text (no inline decoration without resolved labels).
+    expect(screen.getByText('hello /compact world @sub1')).toBeTruthy()
+    expect(document.querySelector('[data-ref-chip]')).toBeNull()
     expect(screen.getByRole('button', { name: '复制' })).toBeTruthy()
+  })
+
+  it('appends display-only chips for the message reference labels and loaded skills', () => {
+    renderView([
+      chatNode('u1', 'user', {
+        kind: 'user', seq: 1, time: 1,
+        content: [{ type: 'text', text: 'hello world' }], source: null,
+        referenceLabels: ['Research notes'], skillNames: ['compact'],
+      }),
+    ])
+    // The resolved labels the flow still carries render as non-interactive
+    // chips after the text (the display-only echo contract: no onActivate).
+    expect(screen.getByText('hello world')).toBeTruthy()
+    const sessionChip = document.querySelector('[data-ref-chip="session"]')
+    expect(sessionChip?.textContent).toContain('Research notes')
+    expect(sessionChip?.getAttribute('title')).toBe('@Research notes')
+    expect(document.querySelector('[data-ref-chip="skill"]')?.textContent).toContain('/compact')
+    expect(document.querySelector('button[data-ref-chip]')).toBeNull()
   })
 
   it('renders user and assistant image blocks through the gallery', async () => {
@@ -1041,7 +1066,7 @@ it('renders the empty hint for an empty conversation', () => {
       at('c1', 'context', {
         kind: 'context', seq: 5, time: 5000,
         content: [{ type: 'text', text: 'injected rules' }],
-        source: { kind: 'file' }, provenance: { role: 'inject', label: 'AGENTS.md' }, form: null,
+        source: { kind: 'file' }, producer: { role: 'inject', label: 'AGENTS.md' }, form: null,
       }),
       at('a2', 'assistant-step', {
         status: 'settled', turn: 1, step: 1, time: 8000,
@@ -1269,7 +1294,7 @@ it('renders the empty hint for an empty conversation', () => {
     const context = (key: string, label: string, text: string) => at(key, 'context', {
       kind: 'context', seq: 5, time: 1500,
       content: [{ type: 'text', text }],
-      source: { kind: 'file' }, provenance: { role: 'inject', label }, form: null,
+      source: { kind: 'file' }, producer: { role: 'inject', label }, form: null,
     })
     renderView([
       context('c1', 'AGENTS.md', 'rules text'),
@@ -1305,7 +1330,7 @@ it('renders the empty hint for an empty conversation', () => {
     const context = (key: string, label: string, text: string) => at(key, 'context', {
       kind: 'context', seq: 5, time: 1500,
       content: [{ type: 'text', text }],
-      source: { kind: 'file' }, provenance: { role: 'inject', label }, form: null,
+      source: { kind: 'file' }, producer: { role: 'inject', label }, form: null,
     })
     renderView([
       context('c1', 'AGENTS.md', 'rules text'),
@@ -1354,7 +1379,7 @@ it('renders the empty hint for an empty conversation', () => {
       at('c1', 'context', {
         kind: 'context', seq: 5, time: 1500,
         content: [{ type: 'text', text: 'rules text' }],
-        source: { kind: 'file' }, provenance: { role: 'inject', label: 'AGENTS.md' }, form: null,
+        source: { kind: 'file' }, producer: { role: 'inject', label: 'AGENTS.md' }, form: null,
       }),
       at('p1', 'turn-process', {
         turn: 1, controlAnchorSeq: 2, processStartSeq: 3, answerAnchorSeq: null,
@@ -1387,7 +1412,7 @@ it('renders the empty hint for an empty conversation', () => {
         kind: 'context', seq: 5, time: 1500,
         content: [{ type: 'text', text: 'background task t1 (bash: pnpm install) finished [status: completed]. Read its output with task_output.' }],
         source: { kind: 'plugin', plugin: 'tool-tasks', form: 'notice', summary: 'bash pnpm install [status: completed]' },
-        provenance: { role: 'inject', label: 'tool-tasks' },
+        producer: { role: 'inject', label: 'tool-tasks' },
         form: 'notice',
       }),
       at('a1', 'assistant-step', {
@@ -1419,7 +1444,7 @@ it('renders the empty hint for an empty conversation', () => {
         kind: 'context', seq: 1, time: 1,
         content: [{ type: 'text', text: 'Background subagent 79df55e1 finished and will do no further work unless you send it more.' }],
         source: { kind: 'plugin', plugin: 'subagent', form: 'notice', summary: 'subagent-settled' },
-        provenance: { role: 'inject', label: 'subagent' },
+        producer: { role: 'inject', label: 'subagent' },
         form: 'notice',
       }),
       chatNode('t1', 'tool-call', { root: settledCall('c1', 'bash', '{}') }),
@@ -1590,13 +1615,15 @@ it('renders the empty hint for an empty conversation', () => {
       chatNode('tail', 'turn-tail', {
         turn: 1, seq: 30, time: 9000,
         closing: {
-          finalNode: { seq: 20, time: 8000 },
+          finalNode: {
+            seq: 20, time: 8000,
+            timing: { stepStartTime: 6000, firstTokenTime: 7200, completedTime: 8200 },
+          },
           blocks: [{ kind: 'text', text: 'done text' }],
           time: 8000,
         },
         branchUnavailable: false,
-        ttftMs: 1200,
-        tokensPerSecond: 34,
+        tokenUsage: { uncachedInputTokens: 100, outputTokens: 34, totalTokens: 134 },
       }, { kind: 'turn', turn } as never),
     ], { openFile, forkAt })
     // The produced row lists only paths settled at or before the closing seq.
@@ -2218,6 +2245,8 @@ describe('plugin apply', () => {
     })
     ctx.provide('sessions', { binding: () => undefined })
     ctx.provide('uiConversation', {})
+    // uiWorkspace carries Session navigation since 0.1.7-rc.1 (the fork path).
+    ctx.provide('uiWorkspace', { openSession: () => {} })
     ctx.provide('connection', {
       isLoopback: true,
       generation: {

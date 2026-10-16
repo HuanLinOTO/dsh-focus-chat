@@ -3,6 +3,7 @@
  *  official chat shows (reply → its own tool rows). */
 import { describe, expect, it } from 'vitest'
 import type { ChatConversationViewNode, ToolResultNode } from '@deepseek-ai/dsh-client-ui-chat/client'
+import { PartialArguments } from '@deepseek-ai/dsh-util-values'
 import { buildFocusFlow, createFlowBuildCache } from '../src/client/model/flow.ts'
 import type { FocusFlowItem } from '../src/client/model/types.ts'
 
@@ -25,9 +26,11 @@ function node(
 }
 
 function bashCall(callId: string, description: string): ToolResultNode {
+  const argsRaw = JSON.stringify({ command: 'x', description })
   return {
-    kind: 'tool-result', seq: 1, time: 1000, callId,
-    call: { name: 'bash', argsRaw: JSON.stringify({ command: 'x', description }) },
+    kind: 'tool-result', seq: 1, time: 1000, callId, name: 'bash',
+    args: PartialArguments.fromText(argsRaw),
+    call: { name: 'bash', argsRaw },
     callTime: 1000, content: [], isError: false, subCalls: [],
   }
 }
